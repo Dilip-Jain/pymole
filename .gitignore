@@ -26,3 +26,5 @@ htmlcov/
 
 # Build artifacts
 _skbuild/
+build.bat
+.pypirc

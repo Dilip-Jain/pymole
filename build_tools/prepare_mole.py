@@ -11,6 +11,31 @@ import zipfile
 MOLE_REPO = "https://github.com/csrc-sdsu/mole/archive/refs/heads/main.zip"
 MOLE_DIR = "mole-main"
 
+def download_dependencies() -> bool:
+    """Download required dependencies using conan."""
+    # TODO: Implement dependency download
+    # 1 Dependencies
+        # Before installing MOLE, ensure the following dependencies are installed:
+        # • Armadillo: http://arma.sourceforge.net
+        # • SuperLU: https://portal.nersc.gov/project/sparse/superlu
+        # • OpenBLAS: https://www.openblas.net
+    # 2 Downloading and Building MOLE
+        # To download and build MOLE:
+        # wget https://sourceforge.net/projects/arma/files/armadillo-12.6.6.tar.xz
+        # tar xvf armadillo-12.6.6.tar.xz
+        # cd armadillo-12.6.6
+        # ./configure
+        # make
+
+        # Set up Armadillo with SuperLU and OpenMP support:
+        # #define ARMA_USE_SUPERLU
+        # #define ARMA_USE_OPENMP
+        # Build MOLE:
+        # cd mole/
+        # make
+    return True
+
+
 def download_mole(target_dir: Path) -> None:
     """Download MOLE library from GitHub."""
     zip_path = target_dir / "mole.zip"
@@ -34,7 +59,7 @@ def copy_mole_sources(source_dir: Path, target_dir: Path) -> None:
     
     # Copy all .cpp and .h files from MOLE src/cpp
     mole_cpp_dir = source_dir / MOLE_DIR / "src" / "cpp"
-    for file in mole_cpp_dir.glob("*.[ch]pp"):
+    for file in mole_cpp_dir.glob("*.h"):
         shutil.copy2(file, cpp_dir)
 
 def prepare_mole(base_dir: Optional[Path] = None) -> None:
@@ -49,6 +74,9 @@ def prepare_mole(base_dir: Optional[Path] = None) -> None:
     temp_dir.mkdir(exist_ok=True)
     
     try:
+        # Download dependencies
+        download_dependencies()
+
         # Download MOLE
         download_mole(temp_dir)
         
@@ -60,4 +88,5 @@ def prepare_mole(base_dir: Optional[Path] = None) -> None:
             shutil.rmtree(temp_dir)
 
 if __name__ == "__main__":
-    prepare_mole()
+    path = Path("../").resolve()
+    prepare_mole(path)
