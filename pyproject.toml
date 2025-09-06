@@ -1,0 +1,27 @@
+[build-system]
+requires = ["scikit-build-core", "setuptools", "wheel"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "pymole"
+version = "0.1.0-alpha"
+description = "Python Mimetic Operators Library Enhanced"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Dilip Jain", email = "59838651+Dilip-Jain@users.noreply.github.com"},
+]
+dependencies = [
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+]
+
+[project.optional-dependencies]
+cpp = [
+    "pybind11>=2.9.0",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+]

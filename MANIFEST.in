@@ -1,0 +1,13 @@
+# Include license and readme
+include LICENSE
+include README.md
+include pyproject.toml
+
+# Include CMake files
+recursive-include src/pymole/cpp *.cpp *.h CMakeLists.txt
+
+# Include build tools
+recursive-include build_tools *.py
+
+# Include tests
+recursive-include tests *.py
