@@ -9,16 +9,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
-# Add MOLE source files
-file(GLOB MOLE_SOURCES "src/cpp/*.cpp")
+# Add MOLE source files (only once)
+file(GLOB MOLE_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpp/*.cpp
+)
 
-# Add the pybind11 module
+# Build the Python extension
 pybind11_add_module(_operators 
     operators.cpp
     ${MOLE_SOURCES}
 )
 
-# Include directories (headers live in src/cpp)
+
+# Add include directories
 target_include_directories(_operators PRIVATE
-    src/cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpp/armadillo-12.6.6/include
 )

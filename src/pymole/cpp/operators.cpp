@@ -1,9 +1,14 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
-#include "gradient.h"
-#include "divergence.h"
-#include "laplacian.h"
+
+#define ARMA_USE_OPENMP
+#define ARMA_USE_SUPERLU
+#include <armadillo>
+
+#include <gradient.h>
+#include <divergence.h>
+#include <laplacian.h>
 
 namespace py = pybind11;
 
