@@ -64,7 +64,7 @@ def download_dependencies(temp_dir: Path, target_dir: Path) -> bool:
     else:
         print("Armadillo already built, skipping.")
 
-    print("✅ Armadillo build completed!")
+    print("[OK] Armadillo build completed!")
     return True
 
 

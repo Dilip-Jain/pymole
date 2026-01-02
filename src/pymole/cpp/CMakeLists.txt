@@ -5,6 +5,23 @@ project(pymole_cpp LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Automatically prepare MOLE dependencies before building
+find_package(Python COMPONENTS Interpreter REQUIRED)
+execute_process(
+    COMMAND ${Python_EXECUTABLE} -c "
+import sys; sys.path.insert(0, '${CMAKE_CURRENT_SOURCE_DIR}/../../..');
+from build_tools.prepare_mole import prepare_mole;
+from pathlib import Path;
+prepare_mole(Path('${CMAKE_CURRENT_SOURCE_DIR}/../../..'))
+"
+    RESULT_VARIABLE PREPARE_RESULT
+    ERROR_VARIABLE PREPARE_ERROR
+)
+
+if(NOT PREPARE_RESULT EQUAL 0)
+    message(FATAL_ERROR "Failed to prepare MOLE dependencies:\n${PREPARE_ERROR}")
+endif()
+
 # Find Python and pybind11
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)

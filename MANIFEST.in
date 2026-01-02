@@ -3,8 +3,8 @@ include LICENSE
 include README.md
 include pyproject.toml
 
-# Include CMake files
-recursive-include src/pymole/cpp *.cpp *.h CMakeLists.txt
+# Include CMake files and all generated sources (including Armadillo)
+recursive-include src/pymole/cpp *
 
 # Include build tools
 recursive-include build_tools *.py
