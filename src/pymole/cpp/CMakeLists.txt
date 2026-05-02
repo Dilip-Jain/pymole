@@ -37,9 +37,32 @@ pybind11_add_module(_operators
     ${MOLE_SOURCES}
 )
 
-
 # Add include directories
 target_include_directories(_operators PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cpp/armadillo-12.6.6/include
 )
+
+# Link Armadillo wrapper objects directly (embeds them in the .pyd)
+target_link_libraries(_operators PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/cpp/armadillo-12.6.6/build/CMakeFiles/armadillo.dir/src/wrapper1.cpp.obj"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cpp/armadillo-12.6.6/build/CMakeFiles/armadillo.dir/src/wrapper2.cpp.obj"
+)
+
+# Try to link static Armadillo library if available
+find_library(ARMADILLO_LIB 
+    NAMES armadillo
+    PATHS "${CMAKE_CURRENT_SOURCE_DIR}/cpp/armadillo-12.6.6/build"
+    NO_DEFAULT_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+)
+
+if(ARMADILLO_LIB)
+    target_link_libraries(_operators PRIVATE ${ARMADILLO_LIB})
+    message(STATUS "Linked static Armadillo library: ${ARMADILLO_LIB}")
+else()
+    message(STATUS "Static Armadillo library not found, relying on object files")
+endif()
+
+# Install the extension module
+install(TARGETS _operators LIBRARY DESTINATION pymole/cpp)

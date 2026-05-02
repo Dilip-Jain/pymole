@@ -22,8 +22,9 @@ def build_armadillo(source_dir) -> bool:
         "cmake",
         "-S", source_dir,
         "-B", build_dir,
-        "-DARMADILLO_USE_SUPERLU=ON",
-        "-DARMADILLO_USE_OPENMP=ON",
+        "-DBUILD_SHARED_LIBS=OFF",  # Build as static library
+        "-DARMA_USE_LAPACK=OFF",    # Disable LAPACK (not needed for basic operations)
+        "-DARMA_USE_BLAS=OFF",      # Disable BLAS
         "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
     ]
     print("Configuring with CMake...")
