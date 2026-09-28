@@ -49,8 +49,12 @@ class MimeticOperator(ABC):
         """
         if self._matrix is None:
             self._matrix = self._build_matrix()
-        return self._matrix @ x
-        
+        result = self._matrix @ x
+        if np.issubdtype(np.asarray(result).dtype, np.floating):
+            result = np.asarray(result)
+            result[np.abs(result) < 1e-13] = 0.0
+        return result
+
     @property
     def matrix(self) -> sparse.spmatrix:
         """Get the operator matrix.

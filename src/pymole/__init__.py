@@ -30,3 +30,19 @@ def create_divergence(n, h):
         from . import cpp
         return cpp.MimeticDivergence(n, h)
     return pure.MimeticDivergence(n, h)
+
+
+def create_laplacian(n, h):
+    """Factory function that creates Laplacian operator using selected backend"""
+    if get_backend() == 'cpp':
+        from . import cpp
+        return cpp.MimeticLaplacian(n, h)
+    return pure.MimeticLaplacian(n, h)
+
+
+def create_interpol(n, h, c=0.5):
+    """Factory function that creates interpolation operator using selected backend"""
+    if get_backend() == 'cpp':
+        from . import cpp
+        return cpp.MimeticInterpol(n, h, c)
+    return pure.MimeticInterpol(n, h, c)

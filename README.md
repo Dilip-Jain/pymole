@@ -25,16 +25,19 @@ import pymole
 import numpy as np
 
 # Create a gradient operator (uses Python backend by default)
-grad = pymole.create_gradient(100, 0.1)
+m, dx = 100, 0.01
+grad = pymole.create_gradient(m, dx)
 
 # Switch to C++ backend for performance
 pymole.use_backend('cpp')
-grad = pymole.create_gradient(100, 0.1)
+grad = pymole.create_gradient(m, dx)
 
-# Apply operator
-x = np.random.rand(100)
+# Non-periodic MOLE grids use staggered vectors: G is (m+1) x (m+2).
+x = np.linspace(0.0, 1.0, m + 2)
 result = grad @ x
 ```
+
+For non-periodic 1D operators, gradient maps `m + 2` nodal values to `m + 1` values, divergence maps `m + 1` values to `m + 2`, and the Laplacian is `(m + 2) x (m + 2)` and is assembled as divergence times gradient. The supplied spacing is used directly.
 
 ## License
 
