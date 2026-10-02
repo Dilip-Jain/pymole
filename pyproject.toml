@@ -1,10 +1,10 @@
 [build-system]
-requires = ["scikit-build-core", "setuptools", "wheel"]
+requires = ["scikit-build-core", "setuptools", "wheel", "pybind11>=2.9.0"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "pymole"
-version = "0.1.0-alpha"
+version = "0.1.0a1"
 description = "Python Mimetic Operators Library Enhanced"
 readme = "README.md"
 requires-python = ">=3.8"

@@ -21,7 +21,7 @@ def _initialize_backend() -> None:
     """Initialize the backend if not already set."""
     if not hasattr(_local, 'backend'):
         _local.backend = _default_backend
-        
+
 def use_backend(backend: Literal['python', 'cpp']) -> None:
     """Set the computational backend for PyMOLE.
     
@@ -36,10 +36,13 @@ def use_backend(backend: Literal['python', 'cpp']) -> None:
     """
     if backend not in ('python', 'cpp'):
         raise ValueError("Backend must be 'python' or 'cpp'")
-    
+
     if backend == 'cpp':
         try:
+            # pylint: disable=import-outside-toplevel
             from . import cpp
+            if not hasattr(cpp, "MimeticGradient"):
+                raise ImportError("C++ backend does not expose MimeticGradient")
         except ImportError:
             warnings.warn(
                 "C++ backend requested but not available. "
@@ -48,7 +51,7 @@ def use_backend(backend: Literal['python', 'cpp']) -> None:
                 RuntimeWarning
             )
             backend = 'python'
-    
+
     _initialize_backend()
     _local.backend = backend
 

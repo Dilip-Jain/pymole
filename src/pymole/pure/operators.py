@@ -1,10 +1,10 @@
 """Pure Python implementation of mimetic operators."""
 
-from typing import Literal, List, Union, Tuple
+from typing import List, Literal, Tuple, Union
 
 import numpy as np
 from scipy import sparse
-from scipy.sparse import spmatrix, csc_matrix
+from scipy.sparse import csc_matrix
 
 from ..base import MimeticOperator
 
@@ -114,7 +114,8 @@ def _build_mole_nonperiodic(m: int, dx: float, k: int, divergence: bool) -> csc_
             2: (1, m + 1, (-1, 0), (-1.0, 1.0)),
             4: (2, m, (-2, -1, 0, 1), (1.0 / 24.0, -9.0 / 8.0, 9.0 / 8.0, -1.0 / 24.0)),
             6: (3, m - 1, (-3, -2, -1, 0, 1, 2),
-                (-3.0 / 640.0, 25.0 / 384.0, -75.0 / 64.0, 75.0 / 64.0, -25.0 / 384.0, 3.0 / 640.0)),
+                (-3.0 / 640.0, 25.0 / 384.0, -75.0 / 64.0,
+                 75.0 / 64.0, -25.0 / 384.0, 3.0 / 640.0)),
             8: (4, m - 2, (-4, -3, -2, -1, 0, 1, 2, 3),
                 (5.0 / 7168.0, -49.0 / 5120.0, 245.0 / 3072.0, -1225.0 / 1024.0,
                  1225.0 / 1024.0, -245.0 / 3072.0, 49.0 / 5120.0, -5.0 / 7168.0)),
@@ -126,7 +127,8 @@ def _build_mole_nonperiodic(m: int, dx: float, k: int, divergence: bool) -> csc_
             2: (1, m, (0, 1), (-1.0, 1.0)),
             4: (2, m - 1, (-1, 0, 1, 2), (1.0 / 24.0, -9.0 / 8.0, 9.0 / 8.0, -1.0 / 24.0)),
             6: (3, m - 2, (-2, -1, 0, 1, 2, 3),
-                (-3.0 / 640.0, 25.0 / 384.0, -75.0 / 64.0, 75.0 / 64.0, -25.0 / 384.0, 3.0 / 640.0)),
+                (-3.0 / 640.0, 25.0 / 384.0, -75.0 / 64.0,
+                 75.0 / 64.0, -25.0 / 384.0, 3.0 / 640.0)),
             8: (4, m - 3, (-3, -2, -1, 0, 1, 2, 3, 4),
                 (5.0 / 7168.0, -49.0 / 5120.0, 245.0 / 3072.0, -1225.0 / 1024.0,
                  1225.0 / 1024.0, -245.0 / 3072.0, 49.0 / 5120.0, -5.0 / 7168.0)),
@@ -141,9 +143,17 @@ def _build_mole_nonperiodic(m: int, dx: float, k: int, divergence: bool) -> csc_
     return csc_matrix(matrix / dx)
 
 
-def _normalize_grid(n: Union[int, Tuple[int, ...]], h: Union[float, Tuple[float, ...]]):
+Boundary = Literal['periodic', 'nonperiodic']
+GridDimensions = Tuple[int, ...]
+GridSpacings = Tuple[float, ...]
+
+
+def _normalize_grid(
+    n: Union[int, GridDimensions],
+    h: Union[float, GridSpacings],
+) -> Tuple[GridDimensions, GridSpacings]:
     dimensions = (n,) if isinstance(n, int) else tuple(n)
-    spacings = (h,) if isinstance(h, (int, float)) else tuple(h)
+    spacings = (float(h),) if isinstance(h, (int, float)) else tuple(float(step) for step in h)
     if not 1 <= len(dimensions) <= 3 or len(dimensions) != len(spacings):
         raise ValueError("Grid dimensions and spacings must have matching 1D, 2D, or 3D lengths")
     if any(size <= 0 for size in dimensions) or any(step <= 0 for step in spacings):
@@ -152,14 +162,16 @@ def _normalize_grid(n: Union[int, Tuple[int, ...]], h: Union[float, Tuple[float,
 
 
 def _trimmed_identity_rows(size: int) -> csc_matrix:
-    return csc_matrix(sparse.eye(size + 2, format="csc")[1:-1, :])
+    identity = csc_matrix(sparse.eye(size + 2, format="csc"))
+    return csc_matrix(identity[1:-1, :])
 
 
 def _trimmed_identity_cols(size: int) -> csc_matrix:
-    return csc_matrix(sparse.eye(size + 2, format="csc")[:, 1:-1])
+    identity = csc_matrix(sparse.eye(size + 2, format="csc"))
+    return csc_matrix(identity[:, 1:-1])
 
 
-def _axis_gradient(size: int, spacing: float, k: int, boundary: str) -> csc_matrix:
+def _axis_gradient(size: int, spacing: float, k: int, boundary: Boundary) -> csc_matrix:
     if boundary == "periodic":
         return _build_mole_periodic_gradient(size, spacing, k)
     if boundary != "nonperiodic":
@@ -167,7 +179,7 @@ def _axis_gradient(size: int, spacing: float, k: int, boundary: str) -> csc_matr
     return _build_mole_nonperiodic(size, spacing, k, divergence=False)
 
 
-def _axis_divergence(size: int, spacing: float, k: int, boundary: str) -> csc_matrix:
+def _axis_divergence(size: int, spacing: float, k: int, boundary: Boundary) -> csc_matrix:
     if boundary == "periodic":
         return (-_build_mole_periodic_gradient(size, spacing, k).T).tocsc()
     if boundary != "nonperiodic":
@@ -176,7 +188,7 @@ def _axis_divergence(size: int, spacing: float, k: int, boundary: str) -> csc_ma
 
 
 def _build_mole_gradient(dimensions: Tuple[int, ...], spacings: Tuple[float, ...],
-                         k: int, boundary: str) -> csc_matrix:
+                         k: int, boundary: Boundary) -> csc_matrix:
     axes = [_axis_gradient(size, step, k, boundary) for size, step in zip(dimensions, spacings)]
     selectors = [
         csc_matrix(sparse.eye(size, format="csc")) if boundary == "periodic"
@@ -197,7 +209,7 @@ def _build_mole_gradient(dimensions: Tuple[int, ...], spacings: Tuple[float, ...
 
 
 def _build_mole_divergence(dimensions: Tuple[int, ...], spacings: Tuple[float, ...],
-                           k: int, boundary: str) -> csc_matrix:
+                           k: int, boundary: Boundary) -> csc_matrix:
     axes = [_axis_divergence(size, step, k, boundary) for size, step in zip(dimensions, spacings)]
     selectors = [
         csc_matrix(sparse.eye(size, format="csc")) if boundary == "periodic"
@@ -257,10 +269,13 @@ _MOLE_DIVERGENCE_BOUNDARIES = {
 
 
 class _PureMimeticOperator(MimeticOperator):
+    boundary: Boundary
+
     def __matmul__(self, x: np.ndarray) -> np.ndarray:
         return self.matrix @ x
 
     def apply(self, x: np.ndarray) -> np.ndarray:
+        """Apply the operator to a vector or array."""
         return self @ x
 
 
@@ -280,7 +295,7 @@ class MimeticGradient(_PureMimeticOperator):
         self.k = k
         self._matrix = self._build_matrix()
 
-    def _build_matrix(self) -> sparse.spmatrix:
+    def _build_matrix(self) -> csc_matrix:
         return _build_mole_gradient(self._dimensions, self._spacings, self.k, self.boundary)
 
 
@@ -300,7 +315,7 @@ class MimeticDivergence(_PureMimeticOperator):
         self.k = k
         self._matrix = self._build_matrix()
 
-    def _build_matrix(self) -> sparse.spmatrix:
+    def _build_matrix(self) -> csc_matrix:
         return _build_mole_divergence(self._dimensions, self._spacings, self.k, self.boundary)
 
 
@@ -320,10 +335,10 @@ class MimeticLaplacian(_PureMimeticOperator):
         self.k = k
         self._matrix = self._build_matrix()
 
-    def _build_matrix(self) -> spmatrix:
+    def _build_matrix(self) -> csc_matrix:
         divergence = MimeticDivergence(self._dimensions, self._spacings, self.boundary, k=self.k)
         gradient = MimeticGradient(self._dimensions, self._spacings, self.boundary, k=self.k)
-        return (divergence.matrix @ gradient.matrix).tocsc()
+        return csc_matrix(divergence.matrix @ gradient.matrix)
 
 
 class MimeticInterpol(_PureMimeticOperator):
@@ -350,7 +365,7 @@ class MimeticInterpol(_PureMimeticOperator):
         self.boundary = boundary
         self._matrix = self._build_matrix()
 
-    def _build_matrix(self) -> spmatrix:
+    def _build_matrix(self) -> csc_matrix:
         matrices = []
         for size, weight in zip(self._dimensions, self._weights):
             matrix = np.zeros((size + 1, size + 2), dtype=float)
@@ -369,9 +384,15 @@ class MimeticInterpol(_PureMimeticOperator):
             my = sparse.kron(matrices[1], selectors[0], format="csc")
             return csc_matrix(sparse.vstack((mx, my), format="csc"))
 
-        mx = sparse.kron(sparse.kron(selectors[2], selectors[1], format="csc"), matrices[0], format="csc")
-        my = sparse.kron(sparse.kron(selectors[2], matrices[1], format="csc"), selectors[0], format="csc")
-        mz = sparse.kron(sparse.kron(matrices[2], selectors[1], format="csc"), selectors[0], format="csc")
+        mx = sparse.kron(
+            sparse.kron(selectors[2], selectors[1], format="csc"),
+            matrices[0], format="csc")
+        my = sparse.kron(
+            sparse.kron(selectors[2], matrices[1], format="csc"),
+            selectors[0], format="csc")
+        mz = sparse.kron(
+            sparse.kron(matrices[2], selectors[1], format="csc"),
+            selectors[0], format="csc")
         return csc_matrix(sparse.vstack((mx, my, mz), format="csc"))
 
 
@@ -386,10 +407,11 @@ def _build_mole_robin_axis(m: int, dx: float, k: int, a: float, b: float) -> csc
 
 
 def _boundary_mask(size: int) -> csc_matrix:
-    mask = sparse.eye(size + 2, format="lil")
+    mask = sparse.lil_matrix((size + 2, size + 2), dtype=float)
+    mask.setdiag(np.ones(size + 2))
     mask[0, 0] = 0.0
     mask[size + 1, size + 1] = 0.0
-    return mask.tocsc()
+    return csc_matrix(mask)
 
 
 def _assemble_mole_boundary(dims: Tuple[int, ...], axes: List[csc_matrix]) -> csc_matrix:
@@ -408,7 +430,8 @@ def _assemble_mole_boundary(dims: Tuple[int, ...], axes: List[csc_matrix]) -> cs
     return csc_matrix(
         sparse.kron(sparse.kron(mask_z, mask_y, format="csc"), axes[0], format="csc")
         + sparse.kron(sparse.kron(mask_z, axes[1], format="csc"), identities[0], format="csc")
-        + sparse.kron(sparse.kron(axes[2], identities[1], format="csc"), identities[0], format="csc")
+        + sparse.kron(sparse.kron(axes[2], identities[1], format="csc"),
+                      identities[0], format="csc")
     )
 
 
@@ -497,4 +520,3 @@ class MimeticMixedBC(_PureMimeticOperator):
                 _build_mole_mixed_axis(size, step, self.k, left, coeffs_left, right, coeffs_right)
             )
         return _assemble_mole_boundary(self._dimensions, axes)
-

@@ -9,3 +9,13 @@ from .operators import (
     MimeticRobinBC,
     MimeticMixedBC,
 )
+
+__all__ = [
+    "MimeticGradient",
+    "MimeticOperator",
+    "MimeticDivergence",
+    "MimeticLaplacian",
+    "MimeticInterpol",
+    "MimeticRobinBC",
+    "MimeticMixedBC",
+]

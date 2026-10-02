@@ -28,6 +28,7 @@ py::object sparse_to_scipy(const T& mat) {
     
     // Get CSC matrix data from Armadillo
     const sp_mat& sp = static_cast<const sp_mat&>(mat);
+     sp.sync();
     
     // Extract data, indices, and indptr
     py::array_t<double> data(sp.n_nonzero);
@@ -68,18 +69,16 @@ py::array_t<double> apply_operator(const T& op, py::array_t<double> v) {
     // Apply operator (matrix-vector multiplication)
     arma::vec result = static_cast<const sp_mat&>(op) * arma_v;
     
-    // Return result as numpy array
-    return py::array_t<double>(
-        result.n_elem,
-        result.memptr()
-    );
+     py::array_t<double> output(result.n_elem);
+     std::copy(result.begin(), result.end(), output.mutable_data());
+     return output;
 }
 
 PYBIND11_MODULE(_operators, m) {
     m.doc() = "PyMOLE C++ backend - Mimetic operators library";
     
     // ==================== Gradient Operator ====================
-    py::class_<Gradient, sp_mat>(m, "Gradient")
+     py::class_<Gradient>(m, "Gradient")
         .def(py::init<arma::u16, arma::u32, double>(),
              py::arg("k"), py::arg("m"), py::arg("dx"),
              "1D Gradient operator constructor\n"
@@ -132,7 +131,7 @@ PYBIND11_MODULE(_operators, m) {
         }, "Return number of non-zero elements");
     
     // ==================== Divergence Operator ====================
-    py::class_<Divergence, sp_mat>(m, "Divergence")
+     py::class_<Divergence>(m, "Divergence")
         .def(py::init<arma::u16, arma::u32, double>(),
              py::arg("k"), py::arg("m"), py::arg("dx"),
              "1D Divergence operator constructor\n"
@@ -185,7 +184,7 @@ PYBIND11_MODULE(_operators, m) {
         }, "Return number of non-zero elements");
     
     // ==================== Laplacian Operator ====================
-    py::class_<Laplacian, sp_mat>(m, "Laplacian")
+     py::class_<Laplacian>(m, "Laplacian")
         .def(py::init<arma::u16, arma::u32, double>(),
              py::arg("k"), py::arg("m"), py::arg("dx"),
              "1D Laplacian operator constructor\n"
@@ -237,7 +236,7 @@ PYBIND11_MODULE(_operators, m) {
         }, "Return number of non-zero elements");
     
     // ==================== Interpolation Operator ====================
-    py::class_<Interpol, sp_mat>(m, "Interpol")
+     py::class_<Interpol>(m, "Interpol")
         .def(py::init<arma::u32, double>(),
              py::arg("m"), py::arg("c"),
              "1D Interpolation operator constructor\n"
@@ -287,7 +286,7 @@ PYBIND11_MODULE(_operators, m) {
         }, "Return number of non-zero elements");
     
     // ==================== RobinBC Boundary Condition ====================
-    py::class_<RobinBC, sp_mat>(m, "RobinBC")
+     py::class_<RobinBC>(m, "RobinBC")
         .def(py::init<arma::u16, arma::u32, double, double, double>(),
              py::arg("k"), py::arg("m"), py::arg("dx"), py::arg("a"), py::arg("b"),
              "1D Robin Boundary Condition constructor\n"
@@ -350,7 +349,7 @@ PYBIND11_MODULE(_operators, m) {
         }, "Return number of non-zero elements");
     
     // ==================== MixedBC Boundary Condition ====================
-    py::class_<MixedBC, sp_mat>(m, "MixedBC")
+     py::class_<MixedBC>(m, "MixedBC")
         .def(py::init<arma::u16, arma::u32, double, const std::string&, 
                       const std::vector<double>&, const std::string&, 
                       const std::vector<double>&>(),

@@ -1,8 +1,10 @@
 """Base classes and interfaces for PyMOLE operators."""
 
 from abc import ABC, abstractmethod
+from typing import Optional
+
 import numpy as np
-from scipy import sparse
+from scipy.sparse import csc_matrix
 
 class MimeticOperator(ABC):
     """Abstract base class for all mimetic operators.
@@ -12,7 +14,7 @@ class MimeticOperator(ABC):
         h (float): Grid spacing
         _matrix (scipy.sparse.spmatrix): Sparse matrix representation of the operator
     """
-    
+
     def __init__(self, n: int, h: float):
         """Initialize the mimetic operator.
         
@@ -24,20 +26,21 @@ class MimeticOperator(ABC):
             raise ValueError("Number of grid points must be positive")
         if h <= 0:
             raise ValueError("Grid spacing must be positive")
-            
+
         self.n = n
         self.h = h
-        self._matrix = None
-        
+        self._matrix: Optional[csc_matrix] = None
+
     @abstractmethod
-    def _build_matrix(self) -> sparse.spmatrix:
+    def _build_matrix(self) -> csc_matrix:
         """Build the operator matrix.
         
         Returns:
-            scipy.sparse.spmatrix: Sparse matrix representation
+            scipy.sparse.csc_matrix: Sparse matrix representation
         """
+        # pylint: disable=unnecessary-pass
         pass
-    
+
     def __matmul__(self, x: np.ndarray) -> np.ndarray:
         """Implement matrix multiplication (@) operator.
         
@@ -56,11 +59,11 @@ class MimeticOperator(ABC):
         return result
 
     @property
-    def matrix(self) -> sparse.spmatrix:
+    def matrix(self) -> csc_matrix:
         """Get the operator matrix.
         
         Returns:
-            scipy.sparse.spmatrix: Sparse matrix representation
+            scipy.sparse.csc_matrix: Sparse matrix representation
         """
         if self._matrix is None:
             self._matrix = self._build_matrix()
